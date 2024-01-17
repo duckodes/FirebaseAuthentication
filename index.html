@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://lib.duckode.com/css/font-face.css">
+    <link rel="stylesheet" href="css/default.css">
+    <link rel="stylesheet" href="css/style.css">
+    <title>Database (10.7.1)</title>
+</head>
+
+<body>
+    <div class="app">
+        <main>
+            <h1 class="subject">Login</h1>
+            <span>Email / Username</span>
+            <input type="text">
+            <div class="error-info-email error-info"></div>
+            <span>Password</span>
+            <input type="password">
+            <div class="error-info-password error-info"></div>
+            <div class="action-container">
+                <div class="action-sign-switch action">Sign up</div>
+            </div>
+            <div class="action-sign-main">Sign in</div>
+        </main>
+    </div>
+    <script src="https://lib.duckode.com/js/clickutils.min.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, child, get, set, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1HnXKHrNIsSGJo7KaooVtZYbowuHR8uo",
+            authDomain: "source-c3817.firebaseapp.com",
+            projectId: "source-c3817",
+            storageBucket: "source-c3817.appspot.com",
+            messagingSenderId: "262948457201",
+            appId: "1:262948457201:web:bae1b685432d4bed84b750"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const main = document.querySelector('.app main');
+        const subject = document.querySelector('.subject');
+        const title_0 = document.querySelectorAll('.app main span')[0];
+        const action_sign_switch = document.querySelector('.action-sign-switch');
+        const action_sign_main = document.querySelector('.action-sign-main');
+        const email = document.querySelector('input[type=text]');
+        const password = document.querySelector('input[type=password]');
+        const error_info_email = document.querySelector('.error-info-email');
+        const error_info_password = document.querySelector('.error-info-password');
+        const status = {
+            sign_in: 0,
+            sign_up: 1,
+        }
+        let authstatus = 0;
+        if (authstatus === status.sign_in) {
+            SIGN_IN_CTL();
+        } else {
+            SIGN_UP_CTL();
+        }
+        action_sign_switch.addEventListener("click", () => {
+            if (authstatus !== status.sign_in) {
+                SIGN_IN_CTL();
+            } else {
+                SIGN_UP_CTL();
+            }
+        });
+        function SIGN_IN_CTL() {
+            authstatus = status.sign_in;
+            subject.textContent = 'Login';
+            title_0.textContent = 'Email / Username';
+            action_sign_switch.textContent = 'Sign up';
+            action_sign_main.textContent = 'Sign in';
+            email.classList.remove('error');
+            password.classList.remove('error');
+            error_info_email.classList.remove('error-info-show');
+            error_info_password.classList.remove('error-info-show');
+        }
+        function SIGN_UP_CTL() {
+            authstatus = status.sign_up;
+            subject.textContent = 'Register';
+            title_0.textContent = 'Email Address';
+            action_sign_switch.textContent = 'Sign in';
+            action_sign_main.textContent = 'Sign up';
+            email.classList.remove('error');
+            password.classList.remove('error');
+            error_info_email.classList.remove('error-info-show');
+            error_info_password.classList.remove('error-info-show');
+        }
+        function VALID(input) {
+            return new Promise((resolve, reject) => {
+                if (/^\s+$/.test(input.value)) {
+                    reject('cannot consist solely of spaces');
+                } else if (/\s/.test(input.value)) {
+                    reject('cannot contain spaces');
+                } else if (input.value.trim() === "") {
+                    reject('cannot be blank');
+                } else if (!/^[a-zA-Z0-9]+$/.test(input.value)) {
+                    reject('cannot contain special characters');
+                } else if (!/^\s+$/.test(input.value) &&
+                    !/\s/.test(input.value) &&
+                    input.value.trim() !== "") {
+                    resolve('valid');
+                }
+            });
+        }
+        clickutils.nClick(action_sign_main, 0).then(SIGN_SWITCH);
+        function SIGN_SWITCH() {
+            switch (authstatus) {
+                case status.sign_in:
+                    signInWithEmailAndPassword(auth, email.value, password.value)
+                        .then((userCredential) => {
+                            // Signed in 
+                            const user = userCredential.user;
+                            // ...
+                            main.innerHTML = '';
+                            alert('Login successful.');
+                            const db = getDatabase();
+                            const dbref = ref(db);
+                            const path = 'auth/' + user.uid;
+                            get(child(dbref, path))
+                                .then(snapshot => {
+                                    if (snapshot.exists()) {
+                                        // username snapshot._node.children_.root_.right.value.value_
+                                        if (snapshot._node.children_.root_.right.value.value_ !== undefined) {
+                                            const username = document.createElement('div');
+                                            username.textContent = snapshot._node.children_.root_.right.value.value_;
+                                            main.appendChild(username);
+                                        }
+                                    } else {
+                                        let PID = '';
+                                        let username = '';
+                                        auth_setup();
+                                        function auth_setup() {
+                                            const input = document.createElement('input');
+                                            input.type = 'text';
+                                            input.placeholder = 'username..';
+                                            input.value = username;
+                                            main.appendChild(input);
+                                            const error_info = document.createElement('div');
+                                            error_info.className = 'error-info';
+                                            main.appendChild(error_info);
+                                            const action_container = document.createElement('div');
+                                            action_container.className = 'action-container';
+                                            main.appendChild(action_container);
+                                            const confirm = document.createElement('div');
+                                            confirm.className = 'action';
+                                            confirm.textContent = 'next';
+                                            action_container.appendChild(confirm);
+
+                                            clickutils.nClick(confirm, 0).then(USERNAME_CONFIRM);
+                                            function USERNAME_CONFIRM() {
+                                                VALID(input).then(msg => {
+                                                    if (msg === 'valid') {
+                                                        input.placeholder = 'profile ID..';
+                                                        username = input.value;
+                                                        input.value = PID;
+                                                        const back = document.createElement('div');
+                                                        back.className = 'action';
+                                                        back.textContent = '❮';
+                                                        action_container.insertBefore(back, confirm);
+                                                        clickutils.nClick(back, 0).then(() => {
+                                                            PID = input.value;
+                                                            main.innerHTML = '';
+                                                            auth_setup();
+                                                        });
+                                                        confirm.textContent = 'confirm';
+                                                        clickutils.nClick(confirm, 0).then(PID_CONFIRM);
+                                                    }
+                                                }).catch(error => {
+                                                    input.classList.add('error');
+                                                    error_info.classList.add('error-info-show');
+                                                    error_info.textContent = error;
+                                                    input.oninput = () => { input.classList.remove('error'); error_info.classList.remove('error-info-show'); };
+                                                    clickutils.nClick(confirm, 0).then(USERNAME_CONFIRM);
+                                                })
+                                            }
+                                            function PID_CONFIRM() {
+                                                VALID(input).then(msg => {
+                                                    if (msg === 'valid') {
+                                                        // set database
+                                                        PID = input.value;
+                                                        main.innerHTML = '';
+                                                        set(ref(db, path), {
+                                                            ID: user.email,
+                                                            PID: PID,
+                                                            username: username
+                                                        }).then(() => {
+                                                            SIGN_SWITCH();
+                                                        })
+                                                    }
+                                                }).catch(error => {
+                                                    input.classList.add('error');
+                                                    error_info.classList.add('error-info-show');
+                                                    error_info.textContent = error;
+                                                    input.oninput = () => { input.classList.remove('error'); error_info.classList.remove('error-info-show'); };
+                                                    clickutils.nClick(confirm, 0).then(PID_CONFIRM);
+                                                })
+                                            }
+                                        }
+                                    }
+                                })
+                        })
+                        .catch((error) => {
+                            const errorCode = error.code;
+                            const errorMessage = error.message;
+                            // ..
+                            email.classList.remove('error');
+                            password.classList.remove('error');
+                            error_info_email.classList.remove('error-info-show');
+                            error_info_password.classList.remove('error-info-show');
+                            switch (errorCode) {
+                                case 'auth/missing-email':
+                                    email.classList.add('error');
+                                    email.oninput = () => { email.classList.remove('error'); error_info_email.classList.remove('error-info-show'); };
+                                    error_info_email.textContent = 'email cannot be blank';
+                                    error_info_email.classList.add('error-info-show');
+                                    break;
+                                case 'auth/missing-password':
+                                    password.classList.add('error');
+                                    password.oninput = () => { password.classList.remove('error'); error_info_password.classList.remove('error-info-show'); };
+                                    error_info_password.textContent = 'password cannot be blank';
+                                    error_info_password.classList.add('error-info-show');
+                                    break;
+                                case 'auth/invalid-email':
+                                    email.classList.add('error');
+                                    email.oninput = () => { email.classList.remove('error'); error_info_email.classList.remove('error-info-show'); };
+                                    error_info_email.textContent = 'This is not an email address';
+                                    error_info_email.classList.add('error-info-show');
+                                    break;
+                                case 'auth/invalid-credential':
+                                    email.classList.add('error');
+                                    password.classList.add('error');
+                                    email.oninput = () => { email.classList.remove('error'); error_info_email.classList.remove('error-info-show'); };
+                                    password.oninput = () => { password.classList.remove('error'); error_info_password.classList.remove('error-info-show'); };
+                                    error_info_email.textContent = 'email or password wrong';
+                                    error_info_email.classList.add('error-info-show');
+                                    break;
+                                default:
+                                    break;
+                            }
+                            clickutils.nClick(action_sign_main, 0).then(SIGN_SWITCH);
+                        });
+                    break;
+                case status.sign_up:
+                    createUserWithEmailAndPassword(auth, email.value, password.value)
+                        .then((userCredential) => {
+                            // Signed up 
+                            const user = userCredential.user;
+                            // ...
+                            alert('Registration successful.');
+                            email.classList.remove('error');
+                            password.classList.remove('error');
+                            location.reload();
+                        })
+                        .catch((error) => {
+                            const errorCode = error.code;
+                            const errorMessage = error.message;
+                            // ..
+                            email.classList.remove('error');
+                            password.classList.remove('error');
+                            error_info_email.classList.remove('error-info-show');
+                            error_info_password.classList.remove('error-info-show');
+                            switch (errorCode) {
+                                case 'auth/missing-email':
+                                    email.classList.add('error');
+                                    email.oninput = () => { email.classList.remove('error'); error_info_email.classList.remove('error-info-show'); };
+                                    error_info_email.textContent = 'email cannot be blank';
+                                    error_info_email.classList.add('error-info-show');
+                                    break;
+                                case 'auth/missing-password':
+                                    password.classList.add('error');
+                                    password.oninput = () => { password.classList.remove('error'); error_info_password.classList.remove('error-info-show'); };
+                                    error_info_password.textContent = 'password cannot be blank';
+                                    error_info_password.classList.add('error-info-show');
+                                    break;
+                                case 'auth/invalid-email':
+                                    email.classList.add('error');
+                                    email.oninput = () => { email.classList.remove('error'); error_info_email.classList.remove('error-info-show'); };
+                                    error_info_email.textContent = 'This is not an email address';
+                                    error_info_email.classList.add('error-info-show');
+                                    break;
+                                case 'auth/weak-password':
+                                    password.classList.add('error');
+                                    password.oninput = () => { password.classList.remove('error'); error_info_password.classList.remove('error-info-show'); };
+                                    error_info_password.textContent = `weak-password(${password.value.length} words): at least 6 words`;
+                                    error_info_password.classList.add('error-info-show');
+                                    break;
+                                case 'auth/email-already-in-use':
+                                    email.classList.add('error');
+                                    email.oninput = () => { email.classList.remove('error'); error_info_email.classList.remove('error-info-show'); };
+                                    error_info_email.textContent = 'email has been used';
+                                    error_info_email.classList.add('error-info-show');
+                                    break;
+                                default:
+                                    break;
+                            }
+                            clickutils.nClick(action_sign_main, 0).then(SIGN_SWITCH);
+                        });
+                    break;
+                default:
+                    break;
+            }
+        }
+    </script>
+</body>
+
+</html>
